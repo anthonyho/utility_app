@@ -20,7 +20,7 @@ import lib
 # Read file
 bills_file = '../EDA/processed_data/bills_building_eui_all_add_pf.csv'
 bills = lib.read_processed_bills(bills_file)
-
+css_link = 'https://codepen.io/chriddyp/pen/bWLwgP.css'
 
 # Define climate zones and types
 list_cz = [str(cz)
@@ -59,6 +59,7 @@ app = dash.Dash()
 app.layout = html.Div([html.Div([type_html, cz_html]),
                        html.Div([dcc.Graph(id='boxplot')],
                                 style={'width': '48%'})])
+app.css.append_css({"external_url": css_link})
 
 
 @app.callback(Output('boxplot', 'figure'),
