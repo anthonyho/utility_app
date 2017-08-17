@@ -13,7 +13,7 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
-import plotly.graph_objs as go
+# import plotly.graph_objs as go
 import lib
 
 
@@ -47,7 +47,7 @@ cz_dropdown = dcc.Dropdown(id='climate_zone',
                            options=[{'label': 'Climate zone ' + cz,
                                      'value': cz}
                                     for cz in list_cz],
-                           value='Office building')
+                           value='3')
 cz_html = html.Div(cz_dropdown,
                    style={'width': '48%',
                           'float': 'right',
@@ -56,10 +56,9 @@ cz_html = html.Div(cz_dropdown,
 
 # Initiate dash and define layout
 app = dash.Dash()
-
-
 app.layout = html.Div([html.Div([type_html, cz_html]),
-                       dcc.Graph(id='boxplot')])
+                       html.Div([dcc.Graph(id='boxplot')],
+                                style={'width': '48%'})])
 
 
 @app.callback(Output('boxplot', 'figure'),
