@@ -12,13 +12,14 @@ import pandas as pd
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
+from dash.dependencies import Input, Output
 import plotly.graph_objs as go
-import applib
+import lib
 
 
 # Read file
-bills_file = '../../EDA/processed_data/bills_building_eui_all_add_pf.csv'
-bills = applib.read_processed_bills(bills_file)
+bills_file = '../EDA/processed_data/bills_building_eui_all_add_pf.csv'
+bills = lib.read_processed_bills(bills_file)
 
 
 # Define climate zones and types
@@ -57,8 +58,15 @@ cz_html = html.Div(cz_dropdown,
 app = dash.Dash()
 
 
-app.layout = html.Div([html.Div([type_html, cz_html])])
+app.layout = html.Div([html.Div([type_html, cz_html]),
+                       dcc.Graph(id='boxplot')])
 
+
+@app.callback(Output('boxplot', 'figure'),
+              [Input('climate_zone', 'value')])
+def update_boxplot(cz):
+    return lib.plot_box(bills, by='cz', selection=cz, value='EUI_tot_avg_2009_2015',
+                 order=list_types)    
 
 if __name__ == '__main__':
     app.run_server()
