@@ -153,7 +153,7 @@ def plot_box(df, by, selection, value,
         data.append(curr_box)
     # Set layout
     layout = go.Layout(xaxis={'title': xlabel},
-                       margin={'l': 200},
+                       margin={'l': 200, 'r': 0, 't': 20},
                        showlegend=False)
 
     return {'data': data, 'layout': layout}

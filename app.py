@@ -24,8 +24,8 @@ css_link = 'https://codepen.io/chriddyp/pen/bWLwgP.css'
 
 
 # Define climate zones and types
-dict_by = {'Select by building type': 'building_type',
-           'Select by climate zone': 'cz'}
+dict_by = {'building_type': 'Building type',
+           'cz': 'Climate zone'}
 list_types = ['Warehouse', 'Distribution',
               'Office building', 'Medical building',
               'Hospital / convalescent home',
@@ -38,46 +38,43 @@ list_cz = [str(cz)
 
 
 # Define app components
-# Radio botton for "select by"
+# Define radio botton and dropdown menu for "select by"
 by_radio = dcc.RadioItems(id='by_radio',
-                          options=[{'label': label, 'value': dict_by[label]}
-                                  for label in dict_by],
-                          value='building_type',
+                          options=[{'label': 'Building type',
+                                    'value': 'building_type'},
+                                   {'label': 'Climate zone', 'value': 'cz'}],
+                          value='cz',
                           labelStyle={'display': 'inline-block'})
-by_html = html.Div(by_radio) #,
-                   #style={'width': '48%',
-                   #       'display': 'inline-block'})
-# Dropdown list for selection
 selection_dropdown = dcc.Dropdown(id='selection_dropdown')
-selection_html = html.Div(selection_dropdown) #,
-                          #style={'width': '48%',
-                          #       'display': 'inline-block'})
+selection_by_html = html.Div([html.Label('Slice data by:'),
+                              by_radio,
+                              selection_dropdown])
+# Define radio botton for statistics to plot
+stats_radio = dcc.RadioItems(id='stats_radio',
+                             options=[{'label': 'Average annual total',
+                                       'value': 'avg'},
+                                      {'label': 'Trend', 'value': 'fit'}],
+                             value='avg',
+                             labelStyle={'display': 'inline-block'})
+stats_html = html.Div([html.Label('Plot data for:'),
+                       stats_radio])
+# Define radio botton for fuel to plot
+fuel_radio = dcc.RadioItems(id='fuel_radio',
+                            options=[{'label': 'Elec + gas', 'value': 'tot'},
+                                     {'label': 'Electric', 'value': 'elec'},
+                                     {'label': 'Gas', 'value': 'gas'}],
+                            value='tot',
+                            labelStyle={'display': 'inline-block'})
+fuel_html = html.Div([html.Label('Fuel type:'),
+                      fuel_radio])
 
-
-# Dropdown list for building types
-#type_dropdown = dcc.Dropdown(id='building_type',
-#                             options=[{'label': bldg_type, 'value': bldg_type}
-#                                      for bldg_type in list_types],
-#                             value='Office building')
-#type_html = html.Div(type_dropdown,
-#                     style={'width': '48%',
-#                            'display': 'inline-block'})
-# Dropdown list for climate zones
-#cz_dropdown = dcc.Dropdown(id='climate_zone',
-#                           options=[{'label': 'Climate zone ' + cz,
-#                                     'value': cz}
-#                                    for cz in list_cz],
-#                           value='3')
-#cz_html = html.Div(cz_dropdown,
-#                   style={'width': '48%',
-#                          'float': 'right',
-#                          'display': 'inline-block'})
 
 
 # Initiate dash and define layout
 app = dash.Dash()
-app.layout = html.Div([html.Div([by_html,
-                                 selection_html],
+app.layout = html.Div([html.Div([selection_by_html,
+                                 stats_html,
+                                 fuel_html],
                                 style={'width': '48%',
                                        'display': 'inline-block'}),
                        html.Div([dcc.Graph(id='boxplot')],
@@ -106,23 +103,25 @@ def update_selection_value(by):
 
 @app.callback(Output('boxplot', 'figure'),
               [Input('by_radio', 'value'),
-               Input('selection_dropdown', 'value')])
-def update_boxplot(by, selection):
+               Input('selection_dropdown', 'value'),
+               Input('fuel_radio', 'value'),
+               Input('stats_radio', 'value')])
+def update_boxplot(by, selection, fuel, stats):
     if by == 'cz':
         order = list_types
     else:
         order = None
+    if stats == 'fit':
+        value_suffix = '_slope'
+    else:
+        value_suffix = ''
+    
+    value = 'EUI_' + fuel + '_' + stats + '_2009_2015' + value_suffix
     return lib.plot_box(bills,
-                        by=by, selection=selection, value='EUI_tot_avg_2009_2015',
+                        by=by, selection=selection, value=value,
                         order=order)
 
 
-
-#@app.callback(Output('boxplot', 'figure'),
-#              [Input('climate_zone', 'value')])
-#def update_boxplot(cz):
-#    return lib.plot_box(bills, by='cz', selection=cz, value='EUI_tot_avg_2009_2015',
-#                 order=list_types)    
 
 if __name__ == '__main__':
     app.run_server()
