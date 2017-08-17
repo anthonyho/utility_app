@@ -50,17 +50,25 @@ selection_by_html = html.Div([html.Label('Slice data by:'),
                               by_radio,
                               selection_dropdown])
 # Define radio botton for statistics to plot
+unit_radio = dcc.RadioItems(id='unit_radio',
+                            options=[{'label': 'Raw', 'value': 'raw'},
+                                     {'label': 'EUI', 'value': 'EUI'}],
+                            value='EUI',
+                            labelStyle={'display': 'inline-block'})
+unit_html = html.Div([html.Label('Plot data for: (to fix)'),
+                      unit_radio])
+# Define radio botton for statistics to plot
 stats_radio = dcc.RadioItems(id='stats_radio',
                              options=[{'label': 'Average annual total',
                                        'value': 'avg'},
                                       {'label': 'Trend', 'value': 'fit'}],
                              value='avg',
                              labelStyle={'display': 'inline-block'})
-stats_html = html.Div([html.Label('Plot data for:'),
+stats_html = html.Div([html.Label('Statistics:'),
                        stats_radio])
 # Define radio botton for fuel to plot
 fuel_radio = dcc.RadioItems(id='fuel_radio',
-                            options=[{'label': 'Elec + gas', 'value': 'tot'},
+                            options=[{'label': 'Total', 'value': 'tot'},
                                      {'label': 'Electric', 'value': 'elec'},
                                      {'label': 'Gas', 'value': 'gas'}],
                             value='tot',
@@ -69,10 +77,10 @@ fuel_html = html.Div([html.Label('Fuel type:'),
                       fuel_radio])
 
 
-
 # Initiate dash and define layout
 app = dash.Dash()
 app.layout = html.Div([html.Div([selection_by_html,
+                                 unit_html,
                                  stats_html,
                                  fuel_html],
                                 style={'width': '48%',
@@ -104,9 +112,10 @@ def update_selection_value(by):
 @app.callback(Output('boxplot', 'figure'),
               [Input('by_radio', 'value'),
                Input('selection_dropdown', 'value'),
-               Input('fuel_radio', 'value'),
-               Input('stats_radio', 'value')])
-def update_boxplot(by, selection, fuel, stats):
+               Input('unit_radio', 'value'),
+               Input('stats_radio', 'value'),
+               Input('fuel_radio', 'value')])
+def update_boxplot(by, selection, unit, stats, fuel):
     if by == 'cz':
         order = list_types
     else:
@@ -115,7 +124,7 @@ def update_boxplot(by, selection, fuel, stats):
         value_suffix = '_slope'
     else:
         value_suffix = ''
-    
+
     value = 'EUI_' + fuel + '_' + stats + '_2009_2015' + value_suffix
     return lib.plot_box(bills,
                         by=by, selection=selection, value=value,
