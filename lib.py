@@ -157,7 +157,8 @@ def plot_box(df, by, selection, value,
     data = go.Data(data)
     # Set layout
     layout = go.Layout(xaxis={'title': xlabel},
-                       margin={'l': 200, 'r': 0, 't': 20},
+                       margin={'l': 200, 'r': 20, 't': 20, 'b': 40},
+                       height=400,
                        showlegend=False)
 
     return {'data': data, 'layout': layout}
@@ -186,10 +187,11 @@ def plot_map(df, by=None, color_dict=None):
                        showlegend=False,
                        mapbox=dict(accesstoken=mapbox_token,
                                    bearing=0,
-                                   center={'lat': 37.5, 'lon': -120},
+                                   center={'lat': 37.25, 'lon': -120},
                                    pitch=0,
-                                   zoom=5.3,
+                                   zoom=5.05,
                                    style='light'),
-                       height=700)
+                       margin={'l': 20, 'r': 20, 't': 20, 'b': 20},
+                       height=640)
 
     return {'data': data, 'layout': layout}

@@ -46,17 +46,12 @@ by_radio = dcc.RadioItems(id='by_radio',
                           value='cz',
                           labelStyle={'display': 'inline-block'})
 selection_dropdown = dcc.Dropdown(id='selection_dropdown')
-#selection_by_html = html.Div([html.Label('Slice data by:'),
-#                              by_radio,
-#                              selection_dropdown])
 # Define radio botton for statistics to plot
 unit_radio = dcc.RadioItems(id='unit_radio',
                             options=[{'label': 'Raw', 'value': 'raw'},
                                      {'label': 'EUI', 'value': 'EUI'}],
                             value='EUI',
                             labelStyle={'display': 'inline-block'})
-#unit_html = html.Div([html.Label('Plot data for: (to fix)'),
-#                      unit_radio])
 # Define radio botton for statistics to plot
 stats_radio = dcc.RadioItems(id='stats_radio',
                              options=[{'label': 'Average annual total',
@@ -64,8 +59,6 @@ stats_radio = dcc.RadioItems(id='stats_radio',
                                       {'label': 'Trend', 'value': 'fit'}],
                              value='avg',
                              labelStyle={'display': 'inline-block'})
-#stats_html = html.Div([html.Label('Statistics:'),
-#                       stats_radio])
 # Define radio botton for fuel to plot
 fuel_radio = dcc.RadioItems(id='fuel_radio',
                             options=[{'label': 'Total', 'value': 'tot'},
@@ -73,8 +66,6 @@ fuel_radio = dcc.RadioItems(id='fuel_radio',
                                      {'label': 'Gas', 'value': 'gas'}],
                             value='tot',
                             labelStyle={'display': 'inline-block'})
-#fuel_html = html.Div([html.Label('Fuel type:'),
-#                      fuel_radio])
 # Define radio botton for color in map
 color_radio = dcc.RadioItems(id='color_radio',
                              options=[{'label': 'Raw', 'value': 'raw'},
@@ -84,8 +75,6 @@ color_radio = dcc.RadioItems(id='color_radio',
                                        'value': 'building_type'}],
                              value='EUI',
                              labelStyle={'display': 'inline-block'})
-#color_html = html.Div([html.Label('Color buildings by:'),
-#                       color_radio])
 
 
 left_col_html = html.Div([html.Label('Slice data by:'),
@@ -122,8 +111,7 @@ app.layout = html.Div([html.Div([dcc.Graph(id='map',
                                  dcc.Graph(id='boxplot')],
                                 style={'width': '49%',
                                        'display': 'inline-block',
-                                       'float': 'right'
-                                       })
+                                       'float': 'right'})
                        ])
 app.css.append_css({"external_url": css_link})
 
