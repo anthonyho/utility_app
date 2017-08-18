@@ -9,6 +9,9 @@ import pandas as pd
 import plotly.graph_objs as go
 
 
+mapbox_token = 'pk.eyJ1IjoiYW50aG9ueWhvIiwiYSI6ImNqNmgxYnhpMDA0ZWoyeXF3N3FldTNwdWIifQ.YX3qN_InNTLbg6twap6Kpg'
+
+
 def read_processed_bills(file, multi_index=True, dtype=None):
     """Function to read processed bills after merging and transformation. Same
     as utilib.read.read_processed_bills()"""
@@ -151,9 +154,42 @@ def plot_box(df, by, selection, value,
                           name=name,
                           marker={'color': color})
         data.append(curr_box)
+    data = go.Data(data)
     # Set layout
     layout = go.Layout(xaxis={'title': xlabel},
                        margin={'l': 200, 'r': 0, 't': 20},
                        showlegend=False)
+
+    return {'data': data, 'layout': layout}
+
+
+def plot_map(df, by=None, color_dict=None):
+    # Define text when hovering over data point
+    EUI_field = ('summary', 'EUI_tot_avg_2009_2015')
+    text = df['cis']['address'].str.title() + ', ' + df['cis']['city'].str.title()
+    text = text + '<br>' + df['cis']['building_type']
+    text = text + '<br>Climate zone ' + df['cis']['cz']
+    text = text + df[EUI_field].apply('<br>Avg annual EUI = {:.1f} kBTU/ft2'.format)
+    text = text + df['cis']['building_area'].apply('<br>Floor area = {:.0f} ft2'.format)
+    # Plot
+    data = go.Data([go.Scattermapbox(lat=df['cis']['Latitude'],
+                                     lon=df['cis']['Longitude'],
+                                     text=text,
+                                     hoverinfo='text',
+                                     mode='markers',
+                                     marker=go.Marker(size=6,
+                                                      color='rgb(255, 0, 0)',
+                                                      opacity=0.6))])
+    # Set layout
+    layout = go.Layout(autosize=True,
+                       hovermode='closest',
+                       showlegend=False,
+                       mapbox=dict(accesstoken=mapbox_token,
+                                   bearing=0,
+                                   center={'lat': 37.5, 'lon': -120},
+                                   pitch=0,
+                                   zoom=5.3,
+                                   style='light'),
+                       height=700)
 
     return {'data': data, 'layout': layout}
