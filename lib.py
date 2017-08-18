@@ -1,5 +1,5 @@
 # Anthony Ho <anthony.ho@energy.ca.gov>
-# Last update 8/16/2017
+# Last update 8/18/2017
 """
 Python library for interactive webapp
 """
@@ -190,7 +190,7 @@ def plot_map(df, by=None, color_dict=None):
                                    center={'lat': 37.25, 'lon': -120},
                                    pitch=0,
                                    zoom=5.05,
-                                   style='light'),
+                                   style='streets'),
                        margin={'l': 20, 'r': 20, 't': 20, 'b': 20},
                        height=640)
 

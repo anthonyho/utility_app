@@ -3,29 +3,43 @@
 Interactive interface for exploring building-level energy consumption data
 
 Anthony Ho <anthony.ho@energy.ca.gov>
-Last updated 8/17/2017
+Last updated 8/18/2017
 '''
 
 
 import numpy as np
 # import pandas as pd
 import dash
+#import dash_auth
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
 # import plotly.graph_objs as go
+import argparse
+from collections import OrderedDict
 import lib
 
 
-# Read file
-bills_file = '../EDA/processed_data/bills_building_eui_all_add_pf.csv'
-bills = lib.read_processed_bills(bills_file)
+# Define css links
 css_link = 'https://codepen.io/chriddyp/pen/bWLwgP.css'
 
-
-# Define climate zones and types
-dict_by = {'building_type': 'Building type',
-           'cz': 'Climate zone'}
+# Define names and options
+dict_by = OrderedDict([('building_type', 'Building type'),
+                       ('cz', 'Climate zone')])
+dict_iou = OrderedDict([('pge', 'PG&E'),
+                        ('sce', 'SCE'),
+                        ('scg', 'SCG'),
+                        ('sdge', 'SDG&E')])
+dict_fuel1 = OrderedDict([('elec', 'Electric'),
+                          ('gas', 'Gas'),
+                          ('both', 'Both')])
+dict_fuel2 = OrderedDict([('tot', 'Total'),
+                          ('elec', 'Electric'),
+                          ('gas', 'Gas')])
+dict_unit = OrderedDict([('raw', 'Raw'),
+                         ('EUI', 'EUI')])
+dict_stat = OrderedDict([('avg', 'Average annual total'),
+                         ('fit', 'Trend')])
 list_types = ['Warehouse', 'Distribution',
               'Office building', 'Medical building',
               'Hospital / convalescent home',
@@ -33,8 +47,38 @@ list_types = ['Warehouse', 'Distribution',
               'Shopping center', 'Department store / retail outlet',
               'Food store / supermarket', 'Storefront retail',
               'Miscell commercial']
-list_cz = [str(cz)
+
+# Define username and password
+# VALID_USERNAME_PASSWORD_PAIRS = [
+#     ['hello', 'world']
+# ]
+
+
+# Get options and arguments from command line
+description = 'Interactive web app for visualizing building energy data'
+parser = argparse.ArgumentParser(description=description)
+parser.add_argument('--public', action='store_true',
+                    help='run app in public mode')
+parser.add_argument('file', help='path to the billing data file')
+args = parser.parse_args()
+bills_file = args.file
+public_mode = args.public
+
+# Read file
+bills = lib.read_processed_bills(bills_file)
+
+# Compute names and options that are not defined in the section above
+# dynamically
+list_cz = [str(cz) 
            for cz in np.sort(bills[('cis', 'cz')].unique().astype(int))]
+
+# Initiate dash
+app = dash.Dash()
+# app = dash.Dash('auth')
+# auth = dash_auth.BasicAuth(
+#     app,
+#     VALID_USERNAME_PASSWORD_PAIRS
+# )
 
 
 # Define app components
@@ -101,10 +145,8 @@ control_panel_html = html.Div([left_col_html,
                                      })
 
 
-# Initiate dash and define layout
-app = dash.Dash()
-app.layout = html.Div([html.Div([dcc.Graph(id='map',
-                                           figure=lib.plot_map(bills))],
+# Define app layout
+app.layout = html.Div([html.Div([dcc.Graph(id='map')],
                                 style={'width': '49%',
                                        'display': 'inline-block'}),
                        html.Div([control_panel_html,
@@ -114,6 +156,7 @@ app.layout = html.Div([html.Div([dcc.Graph(id='map',
                                        'float': 'right'})
                        ])
 app.css.append_css({"external_url": css_link})
+
 
 
 @app.callback(Output('selection_dropdown', 'options'),
@@ -133,6 +176,12 @@ def update_selection_value(by):
         return 'Office building'
     elif by == 'cz':
         return '3'
+
+
+@app.callback(Output('map', 'figure'),
+              [Input('by_radio', 'value')])
+def update_map(tmp):
+    return lib.plot_map(bills)
 
 
 @app.callback(Output('boxplot', 'figure'),
@@ -157,6 +206,9 @@ def update_boxplot(by, selection, unit, stats, fuel):
                         order=order)
 
 
-
 if __name__ == '__main__':
-    app.run_server()
+    if public_mode:
+        app.run_server(host='0.0.0.0')
+    else:
+        app.run_server()
+    
