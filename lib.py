@@ -7,7 +7,6 @@ Python library for interactive webapp
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
-from collections import OrderedDict
 
 
 mapbox_token = 'pk.eyJ1IjoiYW50aG9ueWhvIiwiYSI6ImNqNmgxYnhpMDA0ZWoyeXF3N3FldTNwdWIifQ.YX3qN_InNTLbg6twap6Kpg'
