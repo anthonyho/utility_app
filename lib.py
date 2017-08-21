@@ -7,9 +7,17 @@ Python library for interactive webapp
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
+from collections import OrderedDict
 
 
 mapbox_token = 'pk.eyJ1IjoiYW50aG9ueWhvIiwiYSI6ImNqNmgxYnhpMDA0ZWoyeXF3N3FldTNwdWIifQ.YX3qN_InNTLbg6twap6Kpg'
+
+
+def to_options(iterables):
+    if isinstance(iterables, list):
+        return [{'label': item, 'value': item} for item in iterables]
+    else:
+        return [{'label': iterables[key], 'value': key} for key in iterables]
 
 
 def read_processed_bills(file, multi_index=True, dtype=None):
@@ -158,7 +166,7 @@ def plot_box(df, by, selection, value,
     # Set layout
     layout = go.Layout(xaxis={'title': xlabel},
                        margin={'l': 200, 'r': 20, 't': 20, 'b': 40},
-                       height=400,
+                       #height=400,
                        showlegend=False)
 
     return {'data': data, 'layout': layout}
