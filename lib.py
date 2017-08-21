@@ -7,9 +7,26 @@ Python library for interactive webapp
 import numpy as np
 import pandas as pd
 import plotly.graph_objs as go
+import seaborn as sns
+
 
 
 mapbox_token = 'pk.eyJ1IjoiYW50aG9ueWhvIiwiYSI6ImNqNmgxYnhpMDA0ZWoyeXF3N3FldTNwdWIifQ.YX3qN_InNTLbg6twap6Kpg'
+
+# Set default translation dictionary for abbr
+terms = {'elec': 'electric',
+         'gas': 'gas',
+         'tot': 'total'}
+
+# Define colors
+list_colors = sns.color_palette('Paired', 12)
+list_colors_rgb = []
+for color in list_colors:
+    color_rgb = 'rgb('
+    color_rgb += str(color[0] * 255) + ','
+    color_rgb += str(color[1] * 255) + ','
+    color_rgb += str(color[2] * 255) + ')'
+    list_colors_rgb.append(color_rgb)
 
 
 def to_options(iterables):
@@ -81,6 +98,31 @@ def read_processed_bills(file, multi_index=True, dtype=None):
             df.loc[:, full_col] = df.loc[:, full_col].astype(bool)
 
     return df
+
+
+def parse_building_info(df, info):
+    """Function for parsing building info from either address or propertyID"""
+    # Identify building from address or property ID
+    if isinstance(info, dict):
+        address = info['address'].upper()
+        city = info['city'].upper()
+        zipcode = str(info['zip'])[0:5]
+        ind = ((df[('cis', 'address')] == address) &
+               (df[('cis', 'city')] == city) &
+               (df[('cis', 'zip')] == zipcode))
+        building = df[ind]
+    else:
+        ind = (df[('cis', 'PropertyID')] == str(info))
+        building = df[ind]
+        address = building['cis']['address'].iloc[0]
+        city = building['cis']['city'].iloc[0]
+        zipcode = building['cis']['zip'].iloc[0]
+    # Define full address
+    full_addr = ', ' .join([address.title(), city.title(), zipcode])
+    # Get building type and climate zone
+    building_type = building[('cis', 'building_type')].iloc[0]
+    cz = str(building[('cis', 'cz')].iloc[0])
+    return building, full_addr, building_type, cz
 
 
 def get_group(df, building_type=None, cz=None, other=None):
@@ -171,6 +213,47 @@ def plot_box(df, by, selection, value,
     return {'data': data, 'layout': layout}
 
 
+def plot_bldg_full_timetrace(building, fuel='all'):
+    # Define fuel types
+    if isinstance(fuel, list):
+        list_fuel = fuel
+    elif fuel == 'all':
+        list_fuel = ['gas', 'elec', 'tot']
+    else:
+        list_fuel = [fuel]
+
+    # Plot
+    data = []
+    for fuel in list_fuel:
+        # Define colors
+        if fuel == 'tot':
+            color_i = 2
+        elif fuel == 'elec':
+            color_i = 4
+        elif fuel == 'gas':
+            color_i = 0
+        # Extract data
+        field = 'EUI_' + fuel
+        trace = building[field].iloc[0]
+        yr_mo = pd.to_datetime(trace.index)
+        curr_trace = go.Scatter(x=yr_mo,
+                                y=trace,
+                                mode='lines',
+                                line=dict(color=list_colors_rgb[color_i + 1],
+                                          width=4),
+                                name=terms[fuel].title())
+        data.append(curr_trace)
+    data = go.Data(data)
+    # Set layout
+    layout = go.Layout(xaxis={'title': 'Year'},
+                       yaxis={'title': 'Monthly EUI (kBtu/sq. ft.)'},
+                       #margin={'l': 200, 'r': 20, 't': 20, 'b': 40},
+                       #height=400,
+                       showlegend=True)
+
+    return {'data': data, 'layout': layout}
+
+
 def plot_map(df, by=None, color_dict=None):
     # Define text when hovering over data point
     EUI_field = ('summary', 'EUI_tot_avg_2009_2015')
@@ -198,7 +281,8 @@ def plot_map(df, by=None, color_dict=None):
                                    pitch=0,
                                    zoom=5.05,
                                    style='streets'),
-                       margin={'l': 20, 'r': 20, 't': 20, 'b': 20},
-                       height=640)
+                       margin={'l': 0, 'r': 0, 't': 0, 'b': 0},
+                       #height=640
+                       )
 
     return {'data': data, 'layout': layout}
