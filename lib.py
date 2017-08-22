@@ -38,7 +38,7 @@ def to_options(iterables):
 
 
 def get_iloc(clickData):
-    return clickData['points'][0]['pointNumber']
+    return clickData['points'][0]['customdata']
 
 
 def name_iou(all_iou):
@@ -136,6 +136,26 @@ def get_group(df, building_type=None, cz=None, other=None):
             value = [str(item) for item in value]
             ind = ind & df[key].isin(value)
     return df[ind]
+
+
+def filter_bldg(df, types_tf, cz_tf, iou_tf, fuel=None,
+                consumption_range=None, value=None, year_range=None, area_range=None):
+    # Make sure types_tf is a list since multi dropmenu could result in str
+    if not isinstance(types_tf, list):
+        list_types_tf = list(types_tf)
+    else:
+        list_types_tf = types_tf
+    # Filter by building types and cz
+    index = (df['cis']['building_type'].isin(list_types_tf) &
+             df['cis']['cz'].isin(cz_tf))
+    # Filter by iou
+    index_iou = pd.Series([False] * len(index))
+    for iou in iou_tf:
+        index_iou = index_iou | (df['cis']['iou'].str.contains(iou))
+    index = index & index_iou
+    # Filter by fuel type
+    
+    return df[index]
 
 
 def plot_box(df, by, selection, value,
@@ -368,7 +388,7 @@ def plot_bldg_hist(df, i, value):
     return {'data': data, 'layout': layout}
 
 
-def plot_map(df, by=None, color_dict=None):
+def plot_map(df):
     # Define text when hovering over data point
     EUI_field = ('summary', 'EUI_tot_avg_2009_2015')
     text = df['cis']['address'].str.title() + ', ' + df['cis']['city'].str.title()
@@ -376,15 +396,18 @@ def plot_map(df, by=None, color_dict=None):
     text = text + '<br>Climate zone ' + df['cis']['cz']
     text = text + df[EUI_field].apply('<br>Avg annual EUI = {:.1f} kBtu/ft²'.format)
     text = text + df['cis']['building_area'].apply('<br>Building area = {:,.0f} ft²'.format)
+
     # Plot
     data = go.Data([go.Scattermapbox(lat=df['cis']['Latitude'],
                                      lon=df['cis']['Longitude'],
                                      text=text,
                                      hoverinfo='text',
+                                     customdata=list(df.index),
                                      mode='markers',
                                      marker=go.Marker(size=6,
                                                       color='rgb(255, 0, 0)',
                                                       opacity=0.6))])
+            
     # Set layout
     layout = go.Layout(autosize=True,
                        hovermode='closest',

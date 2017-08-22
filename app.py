@@ -3,7 +3,7 @@
 Interactive interface for exploring building-level energy consumption data
 
 Anthony Ho <anthony.ho@energy.ca.gov>
-Last updated 8/21/2017
+Last updated 8/22/2017
 '''
 
 
@@ -14,7 +14,6 @@ import dash_auth
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
-# import plotly.graph_objs as go
 import argparse
 from collections import OrderedDict
 import lib
@@ -94,7 +93,7 @@ header = html.Div([html.Img(src=banner_link,
 # Define filter components
 filter_types = dcc.Dropdown(id='filter_types',
                             options=lib.to_options(list_types),
-                            value='Office building',
+                            value=['Office building'],
                             multi=True)
 filter_cz = dcc.Checklist(id='filter_cz',
                           options=lib.to_options(list_cz),
@@ -250,9 +249,14 @@ for css in css_links:
 
 
 @app.callback(Output('map', 'figure'),
-              [Input('filter_iou', 'values')])
-def update_map(tmp):
-    return lib.plot_map(bills)
+              [Input('filter_types', 'value'),
+               Input('filter_cz', 'values'),
+               Input('filter_iou', 'values')])
+def update_map(types_tf, cz_tf, iou_tf):
+    bills_pf = lib.filter_bldg(bills,
+                               types_tf=types_tf, cz_tf=cz_tf,
+                               iou_tf=iou_tf)
+    return lib.plot_map(bills_pf)
 
 
 @app.callback(Output('building_info', 'children'),
