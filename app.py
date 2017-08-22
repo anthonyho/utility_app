@@ -197,13 +197,17 @@ html_fulltrace = html.Div([dcc.Graph(id='fulltrace',
                                             'height': '30vh'})],
                           className='eight columns')
 html_hist_avg = html.Div([dcc.Graph(id='hist_avg',
-                                    style={'max-height': '300',
-                                           'height': '30vh'})],
+                                    style={'max-height': '350',
+                                           'height': '35vh'})],
                          className='four columns')
 html_hist_trend = html.Div([dcc.Graph(id='hist_trend',
-                                      style={'max-height': '300',
-                                             'height': '30vh'})],
+                                      style={'max-height': '350',
+                                             'height': '35vh'})],
                            className='four columns')
+html_avg_monthly = html.Div([dcc.Graph(id='avg_monthly',
+                                       style={'max-height': '350',
+                                              'height': '35vh'})],
+                            className='four columns')
 
 
 # Define app layout
@@ -233,7 +237,8 @@ app.layout = html.Div([header,
                                 className='row',
                                 style={'margin-bottom': '10'}),
                        html.Div([html_hist_avg,
-                                 html_hist_trend],
+                                 html_hist_trend,
+                                 html_avg_monthly],
                                 className='row',
                                 style={'margin-bottom': '10'})],
                       style={'width': '85%',
@@ -284,6 +289,13 @@ def update_building_info(clickData):
               [Input('map', 'clickData')])
 def update_fulltrace(clickData):
     return lib.plot_bldg_full_timetrace(bills, lib.get_iloc(clickData))
+
+
+@app.callback(Output('avg_monthly', 'figure'),
+              [Input('map', 'clickData')])
+def update_avg_monthly(clickData):
+    return lib.plot_bldg_avg_monthly(bills, lib.get_iloc(clickData),
+                                     year_range=(2009, 2015))
 
 
 @app.callback(Output('hist_avg', 'figure'),

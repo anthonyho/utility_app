@@ -242,6 +242,74 @@ def plot_bldg_full_timetrace(df, i, fuel='all'):
     return {'data': data, 'layout': layout}
 
 
+def plot_bldg_avg_monthly(df, i, fuel='all', year_range=None):
+    """Plot the average monthly EUI of a building by specified fuel types"""
+    # Parse building info
+    building = df.iloc[i]
+    # Define fuel types
+    if isinstance(fuel, list):
+        list_fuel = fuel
+    elif fuel == 'all':
+        list_fuel = ['tot', 'gas', 'elec']
+    else:
+        list_fuel = [fuel]
+    # Plot
+    data = []
+    for fuel in list_fuel:
+        # Define colors
+        min_alpha = 0.15
+        if fuel == 'tot':
+            color_i = 2
+        elif fuel == 'elec':
+            color_i = 4
+        elif fuel == 'gas':
+            color_i = 0
+        # Extract yearly trace of the building and transform to multi-index df
+        field = 'EUI_' + fuel
+        bldg_all_trace = building[field].copy()
+        list_yr_mo = [tuple(yr_mo.split('-'))
+                      for yr_mo in bldg_all_trace.index]
+        bldg_all_trace.index = pd.MultiIndex.from_tuples(list_yr_mo)
+        # Extract the average monthly trace of the building
+        if year_range:
+            start_year = int(year_range[0])
+            end_year = int(year_range[1])
+            list_year = [str(year) for year in range(start_year, end_year + 1)]
+            field_prefix = str(start_year) + '_' + str(end_year)
+            field_avg_mo = field + '_mo_avg_' + field_prefix
+        else:
+            field_avg_mo = field + '_mo_avg'
+        bldg_mean_trace = building[field_avg_mo]
+        months = [int(mo) for mo in bldg_mean_trace.index]
+        # Plot
+        for i, year in enumerate(list_year):
+            curr_yr_trace = bldg_all_trace[year]
+            alpha = (1 - min_alpha) / len(list_year) * i + min_alpha
+            data.append(go.Scatter(x=months,
+                                   y=curr_yr_trace,
+                                   mode='lines',
+                                   line={'color': list_colors_rgb[color_i],
+                                         'width': 2},
+                                   opacity=alpha,
+                                   showlegend=False))
+        data.append(go.Scatter(x=months,
+                               y=bldg_mean_trace,
+                               mode='lines',
+                               line={'color': list_colors_rgb[color_i + 1],
+                                     'width': 4},
+                               name=terms[fuel].title(),
+                               showlegend=True))
+    data = go.Data(data)
+    # Set layout
+    layout = go.Layout(xaxis={'title': 'Month',
+                              'autotick': False,
+                              'dtick': 1},
+                       yaxis={'title': 'Average monthly EUI (kBtu/ft²)'},
+                       margin={'l': 45, 'r': 0, 't': 0, 'b': 40},
+                       paper_bgcolor='#F3F3F3')
+    return {'data': data, 'layout': layout}
+
+
 def _vertline(x_value, color):
     return {'type': 'line',
             'xref': 'x', 'yref': 'paper',
