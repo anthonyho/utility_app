@@ -91,7 +91,7 @@ header = html.Div([html.Img(src=banner_link,
                                    'width': '200',
                                    'float': 'left',
                                    'position': 'relative'}),
-                   html.H3('Whole Building Consumption Browser',
+                   html.H1('Whole Building Consumption Browser',
                            className='eight columns',
                            style={'text-align': 'right',
                                   'float': 'right',
@@ -151,7 +151,7 @@ html_topleft = html.Div([html.H4('Filter buildings by:'),
                          html.Label('Select building type:'),
                          filter_types],
                         className='eight columns')
-html_topright = html.Div([html.H4('Color buildings by:'),
+html_topright = html.Div([html.H4('Color buildings in map by:'),
                           colorby],
                          className='four columns')
 html_lowerleft = html.Div([html.Div([html.Label('Select climate zone:'),
@@ -182,9 +182,28 @@ html_lowerright = html.Div([html.H4('Define consumption metric:'),
                             html.Label('Statistics:'),
                             metric_stat],
                            className='four columns')
+html_map = html.Div([dcc.Graph(id='map',
+                               style={'max-height': '400',
+                                      'height': '40vh'})],
+                    className='five columns')
+html_boxplot = html.Div([dcc.Graph(id='boxplot',
+                                   style={'max-height': '400',
+                                          'height': '40vh'})],
+                        className='seven columns')
+html_bldg_info = html.Div([html.H4('Current building info:'),
+                           html.Div(id='building_info')],
+                          className='four columns')
+html_fulltrace = html.Div([dcc.Graph(id='fulltrace',
+                                     style={'max-height': '300',
+                                            'height': '30vh'})],
+                          className='eight columns')
 
+# Define app layout
 app.layout = html.Div([header,
                        html.Hr(style={'margin': '0', 'margin-bottom': '5'}),
+                       html.Div(html.H2('Step 1: Browse buildings'),
+                                className='row',
+                                style={'margin-bottom': '5'}),
                        html.Div([html_topleft,
                                  html_topright],
                                 className='row',
@@ -193,10 +212,16 @@ app.layout = html.Div([header,
                                  html_lowerright],
                                 className='row',
                                 style={'margin-bottom': '10'}),
-                       html.Div([html.Div([dcc.Graph(id='map')],
-                                          className='six columns'),
-                                 html.Div([dcc.Graph(id='boxplot')],
-                                          className='six columns')],
+                       html.Div([html_map,
+                                 html_boxplot],
+                                className='row',
+                                style={'margin-bottom': '10'}),
+                       html.Hr(style={'margin': '0', 'margin-bottom': '5'}),
+                       html.Div(html.H2('Step 2: Examine individual building'),
+                                className='row',
+                                style={'margin-bottom': '5'}),
+                       html.Div([html_bldg_info,
+                                 html_fulltrace],
                                 className='row',
                                 style={'margin-bottom': '10'})],
                       style={'width': '85%',
@@ -209,14 +234,45 @@ app.layout = html.Div([header,
                              'padding-top': '20',
                              'padding-bottom': '20'})
 
+
 #app.css.append_css({"external_url": css_link})
 for css in css_links:
     app.css.append_css({"external_url": css})
+
 
 @app.callback(Output('map', 'figure'),
               [Input('filter_iou', 'values')])
 def update_map(tmp):
     return lib.plot_map(bills)
+
+
+@app.callback(Output('building_info', 'children'),
+              [Input('map', 'clickData')])
+def update_building_info(clickData):
+    # Get current building
+    bldg = bills.iloc[lib.get_iloc(clickData)]
+    # Define field of variables
+    EUI_field = ('summary', 'EUI_tot_avg_2009_2015')
+    trend_field = ('summary', 'EUI_tot_fit_2009_2015_slope')
+    area_field = ('cis', 'building_area')
+    address = (bldg['cis']['address'].title() + ', ' +
+               bldg['cis']['city'].title() + ', CA ' + bldg['cis']['zip'])
+    link_map = 'https://www.google.com/maps/place/' + address.replace(' ', '+')
+    # Define text
+    p = []
+    p.append('**Address:**  [' + address + '](' + link_map + ')')
+    p.append('**Building type:**  ' + bldg['cis']['building_type'])
+    p.append('**Climate zone:**  ' + bldg['cis']['cz'])
+    p.append('**6-year average annual EUI:**  {:.1f} kBTU/ft2'.format(bldg[EUI_field]))
+    p.append('**Change in annual EUI over 6 years:**  {:.1f} kBTU/ft2/year'.format(bldg[trend_field]))
+    p.append('**Floor area:**  {:,.0f} ft2'.format(bldg[area_field]))
+    return [dcc.Markdown(item) for item in p]
+
+
+@app.callback(Output('fulltrace', 'figure'),
+              [Input('map', 'clickData')])
+def update_fulltrace(clickData):
+    return lib.plot_bldg_full_timetrace(bills.iloc[lib.get_iloc(clickData)])
 
 
 @app.callback(Output('boxplot', 'figure'),

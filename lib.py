@@ -1,5 +1,5 @@
 # Anthony Ho <anthony.ho@energy.ca.gov>
-# Last update 8/18/2017
+# Last update 8/21/2017
 """
 Python library for interactive webapp
 """
@@ -10,7 +10,7 @@ import plotly.graph_objs as go
 import seaborn as sns
 
 
-
+# Define mapbox token
 mapbox_token = 'pk.eyJ1IjoiYW50aG9ueWhvIiwiYSI6ImNqNmgxYnhpMDA0ZWoyeXF3N3FldTNwdWIifQ.YX3qN_InNTLbg6twap6Kpg'
 
 # Set default translation dictionary for abbr
@@ -18,7 +18,7 @@ terms = {'elec': 'electric',
          'gas': 'gas',
          'tot': 'total'}
 
-# Define colors
+# Define default colors for plotly
 list_colors = sns.color_palette('Paired', 12)
 list_colors_rgb = []
 for color in list_colors:
@@ -34,6 +34,10 @@ def to_options(iterables):
         return [{'label': item, 'value': item} for item in iterables]
     else:
         return [{'label': iterables[key], 'value': key} for key in iterables]
+
+
+def get_iloc(clickData):
+    return clickData['points'][0]['pointNumber']
 
 
 def read_processed_bills(file, multi_index=True, dtype=None):
@@ -207,7 +211,6 @@ def plot_box(df, by, selection, value,
     # Set layout
     layout = go.Layout(xaxis={'title': xlabel},
                        margin={'l': 200, 'r': 20, 't': 20, 'b': 40},
-                       #height=400,
                        showlegend=False)
 
     return {'data': data, 'layout': layout}
@@ -218,10 +221,9 @@ def plot_bldg_full_timetrace(building, fuel='all'):
     if isinstance(fuel, list):
         list_fuel = fuel
     elif fuel == 'all':
-        list_fuel = ['gas', 'elec', 'tot']
+        list_fuel = ['tot', 'gas', 'elec']
     else:
         list_fuel = [fuel]
-
     # Plot
     data = []
     for fuel in list_fuel:
@@ -234,7 +236,7 @@ def plot_bldg_full_timetrace(building, fuel='all'):
             color_i = 0
         # Extract data
         field = 'EUI_' + fuel
-        trace = building[field].iloc[0]
+        trace = building[field]
         yr_mo = pd.to_datetime(trace.index)
         curr_trace = go.Scatter(x=yr_mo,
                                 y=trace,
@@ -247,10 +249,8 @@ def plot_bldg_full_timetrace(building, fuel='all'):
     # Set layout
     layout = go.Layout(xaxis={'title': 'Year'},
                        yaxis={'title': 'Monthly EUI (kBtu/sq. ft.)'},
-                       #margin={'l': 200, 'r': 20, 't': 20, 'b': 40},
-                       #height=400,
+                       margin={'l': 40, 'r': 0, 't': 0, 'b': 40},
                        showlegend=True)
-
     return {'data': data, 'layout': layout}
 
 
@@ -281,8 +281,6 @@ def plot_map(df, by=None, color_dict=None):
                                    pitch=0,
                                    zoom=5.05,
                                    style='streets'),
-                       margin={'l': 0, 'r': 0, 't': 0, 'b': 0},
-                       #height=640
-                       )
+                       margin={'l': 0, 'r': 0, 't': 0, 'b': 0})
 
     return {'data': data, 'layout': layout}
