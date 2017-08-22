@@ -236,7 +236,7 @@ def plot_bldg_full_timetrace(df, i, fuel='all'):
     # Set layout
     layout = go.Layout(xaxis={'title': 'Year'},
                        yaxis={'title': 'Monthly EUI (kBtu/ft²)'},
-                       margin={'l': 40, 'r': 0, 't': 0, 'b': 40},
+                       margin={'l': 45, 'r': 0, 't': 0, 'b': 40},
                        showlegend=True,
                        paper_bgcolor='#F3F3F3')
     return {'data': data, 'layout': layout}
@@ -247,14 +247,14 @@ def _vertline(x_value, color):
             'xref': 'x', 'yref': 'paper',
             'x0': x_value, 'x1': x_value,
             'y0': 0, 'y1': 1,
-            'line': {'color': color, 'width': 3}}
+            'line': {'color': color, 'width': 2}}
 
 
 def _annot(x_value, text, sign):
     return {'x': x_value, 'y': 1,
             'xref': 'x', 'yref': 'paper',
             'text': text,
-            'ax': sign * 40, 'ay': -20}
+            'ax': sign * 30, 'ay': -20}
 
 
 def plot_bldg_hist(df, i, value):
@@ -274,9 +274,11 @@ def plot_bldg_hist(df, i, value):
     percentile = stats.percentileofscore(group_eui, building_eui)
     # Define xlabel and title
     if 'fit' in value[1]:
-        xlabel = 'Change in annual EUI from 2009-2015\n(kBtu/ft²/year)'
+        xlabel = 'Change in annual EUI from 2009-2015<br>(kBtu/ft²/year)'
+        xlim = None
     elif 'avg' in value[1]:
-        xlabel = 'Average annual EUI from 2009-2015 \n(kBtu/ft²)'
+        xlabel = 'Average annual EUI from 2009-2015<br>(kBtu/ft²)'
+        xlim = [0, group_eui.max()]
     # Plot
     data = go.Data([go.Histogram(x=group_eui,
                                  marker={'color': 'rgb(52,152,219)'},
@@ -289,10 +291,11 @@ def plot_bldg_hist(df, i, value):
                                     _annot(building_eui,
                                            '{:.1f}%'.format(percentile),
                                            -sign)],
-                       xaxis={'title': xlabel},
+                       xaxis={'title': xlabel,
+                              'range': xlim},
                        yaxis={'title': 'Counts'},
-                       margin={'l': 40, 'r': 0, 't': 60, 'b': 40},
-                       showlegend=True,
+                       margin={'l': 50, 'r': 0, 't': 40, 'b': 60},
+                       showlegend=False,
                        paper_bgcolor='#F3F3F3')
     return {'data': data, 'layout': layout}
 
@@ -303,8 +306,8 @@ def plot_map(df, by=None, color_dict=None):
     text = df['cis']['address'].str.title() + ', ' + df['cis']['city'].str.title()
     text = text + '<br>' + df['cis']['building_type']
     text = text + '<br>Climate zone ' + df['cis']['cz']
-    text = text + df[EUI_field].apply('<br>Avg annual EUI = {:.1f} kBTU/ft2'.format)
-    text = text + df['cis']['building_area'].apply('<br>Floor area = {:.0f} ft2'.format)
+    text = text + df[EUI_field].apply('<br>Avg annual EUI = {:.1f} kBtu/ft²'.format)
+    text = text + df['cis']['building_area'].apply('<br>Building area = {:,.0f} ft²'.format)
     # Plot
     data = go.Data([go.Scattermapbox(lat=df['cis']['Latitude'],
                                      lon=df['cis']['Longitude'],

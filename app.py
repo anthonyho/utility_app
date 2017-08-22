@@ -3,7 +3,7 @@
 Interactive interface for exploring building-level energy consumption data
 
 Anthony Ho <anthony.ho@energy.ca.gov>
-Last updated 8/18/2017
+Last updated 8/21/2017
 '''
 
 
@@ -86,13 +86,13 @@ app = dash.Dash()
 
 # Define header
 header = html.Div([html.Img(src=banner_link,
-                            className='four columns',
-                            style={'height': '60',
-                                   'width': '200',
+                            className='three columns',
+                            style={'height': '72',
+                                   'width': '240',
                                    'float': 'left',
                                    'position': 'relative'}),
-                   html.H1('Whole Building Consumption Browser',
-                           className='eight columns',
+                   html.H1('Whole-Building Energy Consumption Browser',
+                           className='nine columns',
                            style={'text-align': 'right',
                                   'float': 'right',
                                   'position': 'relative'})],
@@ -190,13 +190,21 @@ html_boxplot = html.Div([dcc.Graph(id='boxplot',
                                    style={'max-height': '400',
                                           'height': '40vh'})],
                         className='seven columns')
-html_bldg_info = html.Div([html.H4('Current building info:'),
-                           html.Div(id='building_info')],
+html_bldg_info = html.Div([html.Div(id='building_info')],
                           className='four columns')
 html_fulltrace = html.Div([dcc.Graph(id='fulltrace',
                                      style={'max-height': '300',
                                             'height': '30vh'})],
                           className='eight columns')
+html_hist_avg = html.Div([dcc.Graph(id='hist_avg',
+                                    style={'max-height': '300',
+                                           'height': '30vh'})],
+                         className='four columns')
+html_hist_trend = html.Div([dcc.Graph(id='hist_trend',
+                                      style={'max-height': '300',
+                                             'height': '30vh'})],
+                           className='four columns')
+
 
 # Define app layout
 app.layout = html.Div([header,
@@ -223,6 +231,10 @@ app.layout = html.Div([header,
                        html.Div([html_bldg_info,
                                  html_fulltrace],
                                 className='row',
+                                style={'margin-bottom': '10'}),
+                       html.Div([html_hist_avg,
+                                 html_hist_trend],
+                                className='row',
                                 style={'margin-bottom': '10'})],
                       style={'width': '85%',
                              'max-width': '1200',
@@ -234,8 +246,6 @@ app.layout = html.Div([header,
                              'padding-top': '20',
                              'padding-bottom': '20'})
 
-
-#app.css.append_css({"external_url": css_link})
 for css in css_links:
     app.css.append_css({"external_url": css})
 
@@ -261,18 +271,33 @@ def update_building_info(clickData):
     # Define text
     p = []
     p.append('**Address:**  [' + address + '](' + link_map + ')')
+    p.append('**Utility:**  ' + lib.name_iou(bldg['cis']['iou']))
     p.append('**Building type:**  ' + bldg['cis']['building_type'])
     p.append('**Climate zone:**  ' + bldg['cis']['cz'])
-    p.append('**6-year average annual EUI:**  {:.1f} kBTU/ft2'.format(bldg[EUI_field]))
-    p.append('**Change in annual EUI over 6 years:**  {:.1f} kBTU/ft2/year'.format(bldg[trend_field]))
-    p.append('**Floor area:**  {:,.0f} ft2'.format(bldg[area_field]))
+    p.append('**6-year average annual EUI:**  {:.1f} kBTU/ft²'.format(bldg[EUI_field]))
+    p.append('**Change in annual EUI over 6 years:**  {:.1f} kBTU/ft²/year'.format(bldg[trend_field]))
+    p.append('**Floor area:**  {:,.0f} ft²'.format(bldg[area_field]))
     return [dcc.Markdown(item) for item in p]
 
 
 @app.callback(Output('fulltrace', 'figure'),
               [Input('map', 'clickData')])
 def update_fulltrace(clickData):
-    return lib.plot_bldg_full_timetrace(bills.iloc[lib.get_iloc(clickData)])
+    return lib.plot_bldg_full_timetrace(bills, lib.get_iloc(clickData))
+
+
+@app.callback(Output('hist_avg', 'figure'),
+              [Input('map', 'clickData')])
+def update_hist_avg(clickData):
+    value = ('summary', 'EUI_tot_avg_2009_2015')
+    return lib.plot_bldg_hist(bills, lib.get_iloc(clickData), value)
+
+
+@app.callback(Output('hist_trend', 'figure'),
+              [Input('map', 'clickData')])
+def update_hist_trend(clickData):
+    value = ('summary', 'EUI_tot_fit_2009_2015_slope')
+    return lib.plot_bldg_hist(bills, lib.get_iloc(clickData), value)
 
 
 @app.callback(Output('boxplot', 'figure'),
