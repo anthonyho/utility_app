@@ -5,6 +5,7 @@ Python library for interactive webapp
 """
 
 import numpy as np
+from scipy import stats
 import pandas as pd
 import plotly.graph_objs as go
 import seaborn as sns
@@ -38,6 +39,14 @@ def to_options(iterables):
 
 def get_iloc(clickData):
     return clickData['points'][0]['pointNumber']
+
+
+def name_iou(all_iou):
+    mapping = {'pge': 'PG&E',
+               'sce': 'SCE',
+               'scg': 'SCG',
+               'sdge': 'SDG&E'}
+    return ', '.join([mapping[iou] for iou in all_iou.split(',')])
 
 
 def read_processed_bills(file, multi_index=True, dtype=None):
@@ -104,31 +113,6 @@ def read_processed_bills(file, multi_index=True, dtype=None):
     return df
 
 
-def parse_building_info(df, info):
-    """Function for parsing building info from either address or propertyID"""
-    # Identify building from address or property ID
-    if isinstance(info, dict):
-        address = info['address'].upper()
-        city = info['city'].upper()
-        zipcode = str(info['zip'])[0:5]
-        ind = ((df[('cis', 'address')] == address) &
-               (df[('cis', 'city')] == city) &
-               (df[('cis', 'zip')] == zipcode))
-        building = df[ind]
-    else:
-        ind = (df[('cis', 'PropertyID')] == str(info))
-        building = df[ind]
-        address = building['cis']['address'].iloc[0]
-        city = building['cis']['city'].iloc[0]
-        zipcode = building['cis']['zip'].iloc[0]
-    # Define full address
-    full_addr = ', ' .join([address.title(), city.title(), zipcode])
-    # Get building type and climate zone
-    building_type = building[('cis', 'building_type')].iloc[0]
-    cz = str(building[('cis', 'cz')].iloc[0])
-    return building, full_addr, building_type, cz
-
-
 def get_group(df, building_type=None, cz=None, other=None):
     """Function to extract group of specific building type and/or climate
     zone and/or other attributes. Same as utilib.plot.get_group()"""
@@ -191,9 +175,9 @@ def plot_box(df, by, selection, value,
     # Define label
     if xlabel is None:
         if 'fit' in value:
-            xlabel = 'Change in annual EUI from 2009-2015\n(kBtu/ft2/year)'
+            xlabel = 'Change in annual EUI from 2009-2015\n(kBtu/ft²/year)'
         elif 'avg' in value:
-            xlabel = 'Average annual EUI from 2009-2015 \n(kBtu/ft2)'
+            xlabel = 'Average annual EUI from 2009-2015 \n(kBtu/ft²)'
 
     # Plot
     data = []
@@ -211,12 +195,15 @@ def plot_box(df, by, selection, value,
     # Set layout
     layout = go.Layout(xaxis={'title': xlabel},
                        margin={'l': 200, 'r': 20, 't': 20, 'b': 40},
-                       showlegend=False)
+                       showlegend=False,
+                       paper_bgcolor='#F3F3F3')
 
     return {'data': data, 'layout': layout}
 
 
-def plot_bldg_full_timetrace(building, fuel='all'):
+def plot_bldg_full_timetrace(df, i, fuel='all'):
+    # Parse building info
+    building = df.iloc[i]
     # Define fuel types
     if isinstance(fuel, list):
         list_fuel = fuel
@@ -248,9 +235,65 @@ def plot_bldg_full_timetrace(building, fuel='all'):
     data = go.Data(data)
     # Set layout
     layout = go.Layout(xaxis={'title': 'Year'},
-                       yaxis={'title': 'Monthly EUI (kBtu/sq. ft.)'},
+                       yaxis={'title': 'Monthly EUI (kBtu/ft²)'},
                        margin={'l': 40, 'r': 0, 't': 0, 'b': 40},
-                       showlegend=True)
+                       showlegend=True,
+                       paper_bgcolor='#F3F3F3')
+    return {'data': data, 'layout': layout}
+
+
+def _vertline(x_value, color):
+    return {'type': 'line',
+            'xref': 'x', 'yref': 'paper',
+            'x0': x_value, 'x1': x_value,
+            'y0': 0, 'y1': 1,
+            'line': {'color': color, 'width': 3}}
+
+
+def _annot(x_value, text, sign):
+    return {'x': x_value, 'y': 1,
+            'xref': 'x', 'yref': 'paper',
+            'text': text,
+            'ax': sign * 40, 'ay': -20}
+
+
+def plot_bldg_hist(df, i, value):
+    """Plot histogram of value with line indicating the value of current
+    building"""
+    # Parse building info
+    building = df.iloc[i]
+    building_type = building[('cis', 'building_type')]
+    cz = str(building[('cis', 'cz')])
+    # Extract rows from the specified building types and climate zones
+    group = get_group(df, building_type=building_type, cz=cz)
+    # Get values
+    building_eui = building[value]
+    group_eui = group[value]
+    group_eui = group_eui[group_eui.notnull()]
+    group_eui_mean = group_eui.mean()
+    percentile = stats.percentileofscore(group_eui, building_eui)
+    # Define xlabel and title
+    if 'fit' in value[1]:
+        xlabel = 'Change in annual EUI from 2009-2015\n(kBtu/ft²/year)'
+    elif 'avg' in value[1]:
+        xlabel = 'Average annual EUI from 2009-2015 \n(kBtu/ft²)'
+    # Plot
+    data = go.Data([go.Histogram(x=group_eui,
+                                 marker={'color': 'rgb(52,152,219)'},
+                                 opacity=0.75)])
+    # Set layout
+    sign = int(building_eui < group_eui_mean) * 2 - 1
+    layout = go.Layout(shapes=[_vertline(group_eui_mean, 'rgb(0,0,0)'),
+                               _vertline(building_eui, list_colors_rgb[5])],
+                       annotations=[_annot(group_eui_mean, 'group mean', sign),
+                                    _annot(building_eui,
+                                           '{:.1f}%'.format(percentile),
+                                           -sign)],
+                       xaxis={'title': xlabel},
+                       yaxis={'title': 'Counts'},
+                       margin={'l': 40, 'r': 0, 't': 60, 'b': 40},
+                       showlegend=True,
+                       paper_bgcolor='#F3F3F3')
     return {'data': data, 'layout': layout}
 
 
