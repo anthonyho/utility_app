@@ -38,7 +38,10 @@ def to_options(iterables):
 
 
 def get_iloc(clickData):
-    return clickData['points'][0]['customdata']
+    if clickData is None:
+        return 0
+    else:
+        return clickData['points'][0]['customdata']
 
 
 def name_iou(all_iou):
@@ -139,7 +142,9 @@ def get_group(df, building_type=None, cz=None, other=None):
 
 
 def filter_bldg(df, types_tf, cz_tf, iou_tf, fuel=None,
-                consumption_range=None, value=None, year_range=None, area_range=None):
+                consumption_range=None, value=None,
+                year_tf=None, year_lim=None,
+                area_tf=None, area_lim=None):
     # Make sure types_tf is a list since multi dropmenu could result in str
     if not isinstance(types_tf, list):
         list_types_tf = list(types_tf)
@@ -154,7 +159,18 @@ def filter_bldg(df, types_tf, cz_tf, iou_tf, fuel=None,
         index_iou = index_iou | (df['cis']['iou'].str.contains(iou))
     index = index & index_iou
     # Filter by fuel type
-    
+    # Filter by year built range
+    if not ((year_tf[0] == year_lim[0]) and (year_tf[1] == year_lim[1])):
+        index = index & ((df['cis']['year_built'] >= year_tf[0]) &
+                         (df['cis']['year_built'] <= year_tf[1]))
+    # Filter by building area
+    if (area_tf[0] == area_lim[0]) and not (area_tf[1] == area_lim[1]):
+        index = index & (df['cis']['building_area'] <= area_tf[1])
+    elif not (area_tf[0] == area_lim[0]) and (area_tf[1] == area_lim[1]):
+        index = index & (df['cis']['building_area'] >= area_tf[0])
+    elif not ((area_tf[0] == area_lim[0]) and (area_tf[1] == area_lim[1])):
+        index = index & ((df['cis']['building_area'] >= area_tf[0]) &
+                         (df['cis']['building_area'] <= area_tf[1]))
     return df[index]
 
 
@@ -395,6 +411,7 @@ def plot_map(df):
     text = text + '<br>' + df['cis']['building_type']
     text = text + '<br>Climate zone ' + df['cis']['cz']
     text = text + df[EUI_field].apply('<br>Avg annual EUI = {:.1f} kBtu/ft²'.format)
+    text = text + df['cis']['year_built'].apply('<br>Year built = {:.0f}'.format)
     text = text + df['cis']['building_area'].apply('<br>Building area = {:,.0f} ft²'.format)
 
     # Plot
@@ -416,7 +433,7 @@ def plot_map(df):
                                    bearing=0,
                                    center={'lat': 37.25, 'lon': -120},
                                    pitch=0,
-                                   zoom=5.05,
+                                   zoom=4.2,
                                    style='streets'),
                        margin={'l': 0, 'r': 0, 't': 0, 'b': 0})
 

@@ -69,6 +69,14 @@ auth_list = pd.read_csv('auth.csv').values.tolist()
 # dynamically
 list_cz = [str(cz)
            for cz in np.sort(bills[('cis', 'cz')].unique().astype(int))]
+min_year = int(bills['cis']['year_built'].min())
+max_year = int(bills['cis']['year_built'].max())
+dict_year = {yr: str(yr) for yr in range(min_year, max_year + 1)
+             if yr % 20 == 0}
+min_area = 50000
+max_area = 500000
+dict_area = {area: str(area) for area in range(min_area, max_area + 1)
+             if area % 50000 == 0}
 
 # Initiate dash
 app = dash.Dash('auth')
@@ -113,14 +121,13 @@ filter_value = dcc.RangeSlider(id='filter_value',
                                       for i in range(0, 1000) if i % 100 == 0},
                                value=[0, 1000])
 filter_year = dcc.RangeSlider(id='filter_year',
-                              min=2009, max=2015,
-                              marks={i: str(i) for i in range(2009, 2016)},
-                              value=[2009, 2015])
+                              min=min_year, max=max_year, step=5,
+                              marks=dict_year,
+                              value=[min_year, max_year])
 filter_area = dcc.RangeSlider(id='filter_area',
-                              min=0, max=1000, step=0.1,
-                              marks={i: str(i)
-                                     for i in range(0, 1000) if i % 100 == 0},
-                              value=[0, 1000])
+                              min=min_area, max=max_area, step=10000,
+                              marks=dict_area,
+                              value=[min_area, max_area])
 
 # Define radio botton for color in map
 colorby = dcc.RadioItems(id='colorby',
@@ -163,7 +170,7 @@ html_lowerleft = html.Div([html.Div([html.Label('Select climate zone:'),
                                      html.Label('Year built:'),
                                      html.Div([filter_year],
                                               style={'margin-bottom': '35'}),
-                                     html.Label('Building area:'),
+                                     html.Label('Building area (ft²):'),
                                      html.Div([filter_area],
                                               style={'margin-bottom': '35'})],
                                     className='five columns')])
@@ -186,8 +193,8 @@ html_boxplot = html.Div([dcc.Graph(id='boxplot',
 html_bldg_info = html.Div([html.Div(id='building_info')],
                           className='four columns')
 html_fulltrace = html.Div([dcc.Graph(id='fulltrace',
-                                     style={'max-height': '300',
-                                            'height': '30vh'})],
+                                     style={'max-height': '350',
+                                            'height': '35vh'})],
                           className='eight columns')
 html_hist_avg = html.Div([dcc.Graph(id='hist_avg',
                                     style={'max-height': '350',
@@ -251,11 +258,15 @@ for css in css_links:
 @app.callback(Output('map', 'figure'),
               [Input('filter_types', 'value'),
                Input('filter_cz', 'values'),
-               Input('filter_iou', 'values')])
-def update_map(types_tf, cz_tf, iou_tf):
+               Input('filter_iou', 'values'),
+               Input('filter_year', 'value'),
+               Input('filter_area', 'value')])
+def update_map(types_tf, cz_tf, iou_tf, year_tf, area_tf):
     bills_pf = lib.filter_bldg(bills,
                                types_tf=types_tf, cz_tf=cz_tf,
-                               iou_tf=iou_tf)
+                               iou_tf=iou_tf,
+                               year_tf=year_tf, year_lim=(min_year, max_year),
+                               area_tf=area_tf, area_lim=(min_area, max_area),)
     return lib.plot_map(bills_pf)
 
 
@@ -267,6 +278,7 @@ def update_building_info(clickData):
     # Define field of variables
     EUI_field = ('summary', 'EUI_tot_avg_2009_2015')
     trend_field = ('summary', 'EUI_tot_fit_2009_2015_slope')
+    year_field = ('cis', 'year_built')
     area_field = ('cis', 'building_area')
     address = (bldg['cis']['address'].title() + ', ' +
                bldg['cis']['city'].title() + ', CA ' + bldg['cis']['zip'])
@@ -279,6 +291,7 @@ def update_building_info(clickData):
     p.append('**Climate zone:**  ' + bldg['cis']['cz'])
     p.append('**6-year average annual EUI:**  {:.1f} kBTU/ft²'.format(bldg[EUI_field]))
     p.append('**Change in annual EUI over 6 years:**  {:.1f} kBTU/ft²/year'.format(bldg[trend_field]))
+    p.append('**Year built:**  {}'.format(int(bldg[year_field])))
     p.append('**Floor area:**  {:,.0f} ft²'.format(bldg[area_field]))
     return [dcc.Markdown(item) for item in p]
 
