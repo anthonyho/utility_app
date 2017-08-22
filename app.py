@@ -8,9 +8,9 @@ Last updated 8/21/2017
 
 
 import numpy as np
-# import pandas as pd
+import pandas as pd
 import dash
-# import dash_auth
+import dash_auth
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
@@ -50,11 +50,6 @@ list_colorby = ['Building type', 'Climate zone',
                 'IOU', 'Fuel type',
                 'Consumption', 'Year built', 'Building area']
 
-# Define username and password
-# VALID_USERNAME_PASSWORD_PAIRS = [
-#     ['hello', 'world']
-# ]
-
 # Get options and arguments from command line
 description = 'Interactive web app for visualizing building energy data'
 parser = argparse.ArgumentParser(description=description)
@@ -68,18 +63,17 @@ public_mode = args.public
 # Read file
 bills = lib.read_processed_bills(bills_file)
 
+# Extract username and password
+auth_list = pd.read_csv('auth.csv').values.tolist()
+
 # Compute names and options that are not defined in the section above
 # dynamically
 list_cz = [str(cz)
            for cz in np.sort(bills[('cis', 'cz')].unique().astype(int))]
 
 # Initiate dash
-app = dash.Dash()
-# app = dash.Dash('auth')
-# auth = dash_auth.BasicAuth(
-#     app,
-#     VALID_USERNAME_PASSWORD_PAIRS
-# )
+app = dash.Dash('auth')
+auth = dash_auth.BasicAuth(app, auth_list)
 
 
 # Define app panel components
