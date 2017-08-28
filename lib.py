@@ -404,15 +404,27 @@ def plot_bldg_hist(df, i, value):
     return {'data': data, 'layout': layout}
 
 
-def plot_map(df):
+def plot_map(df, colorby_value=None, value=None):
     # Define text when hovering over data point
-    EUI_field = ('summary', 'EUI_tot_avg_2009_2015')
+    #EUI_field = ('summary', 'EUI_tot_avg_2009_2015')
+    EUI_field = ('summary', value)
     text = df['cis']['address'].str.title() + ', ' + df['cis']['city'].str.title()
     text = text + '<br>' + df['cis']['building_type']
     text = text + '<br>Climate zone ' + df['cis']['cz']
     text = text + df[EUI_field].apply('<br>Avg annual EUI = {:.1f} kBtu/ft²'.format)
     text = text + df['cis']['year_built'].apply('<br>Year built = {:.0f}'.format)
     text = text + df['cis']['building_area'].apply('<br>Building area = {:,.0f} ft²'.format)
+
+    # Define colors
+    if colorby_value == 'Consumption':
+        color = np.log(df[EUI_field])
+        colorscale = 'YlOrBr'
+    elif colorby_value == 'Year built':
+        color = df['cis']['year_built']
+        colorscale = 'hot'
+    else:
+        color = 'rgb(255, 0, 0)'
+        colorscale = None
 
     # Plot
     data = go.Data([go.Scattermapbox(lat=df['cis']['Latitude'],
@@ -422,7 +434,8 @@ def plot_map(df):
                                      customdata=list(df.index),
                                      mode='markers',
                                      marker=go.Marker(size=6,
-                                                      color='rgb(255, 0, 0)',
+                                                      color=color,
+                                                      colorscale=colorscale,
                                                       opacity=0.6))])
             
     # Set layout

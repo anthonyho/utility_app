@@ -260,14 +260,26 @@ for css in css_links:
                Input('filter_cz', 'values'),
                Input('filter_iou', 'values'),
                Input('filter_year', 'value'),
-               Input('filter_area', 'value')])
-def update_map(types_tf, cz_tf, iou_tf, year_tf, area_tf):
+               Input('filter_area', 'value'),
+               Input('filter_fuel', 'value'),
+               Input('filter_value', 'value'),
+               Input('metric_unit', 'value'),
+               Input('metric_fuel', 'value'),
+               Input('metric_stat', 'value'),
+               Input('colorby', 'value')])
+def update_map(types_tf, cz_tf, iou_tf, year_tf, area_tf,
+               fuel_tf, value_tf, unit_tu, fuel_tu, stat_tu, colorby_value):
+    if stat_tu == 'fit':
+        value_suffix = '_slope'
+    else:
+        value_suffix = ''
+    value = unit_tu + '_' + fuel_tu + '_' + stat_tu + '_2009_2015' + value_suffix
     bills_pf = lib.filter_bldg(bills,
                                types_tf=types_tf, cz_tf=cz_tf,
                                iou_tf=iou_tf,
                                year_tf=year_tf, year_lim=(min_year, max_year),
-                               area_tf=area_tf, area_lim=(min_area, max_area),)
-    return lib.plot_map(bills_pf)
+                               area_tf=area_tf, area_lim=(min_area, max_area))
+    return lib.plot_map(bills_pf, colorby_value, value)
 
 
 @app.callback(Output('building_info', 'children'),
@@ -327,37 +339,28 @@ def update_hist_trend(clickData):
               [Input('filter_types', 'value'),
                Input('filter_cz', 'values'),
                Input('filter_iou', 'values'),
-               Input('filter_fuel', 'value'),
-               Input('filter_value', 'value'),
                Input('filter_year', 'value'),
                Input('filter_area', 'value'),
-               Input('colorby', 'value'),
+               Input('filter_fuel', 'value'),
+               Input('filter_value', 'value'),
                Input('metric_unit', 'value'),
                Input('metric_fuel', 'value'),
                Input('metric_stat', 'value')])
-def update_boxplot(tmp, tmp2, tmp3, tmp4, t5, t6, t7, t8, t9, t10, t11):
-    by = 'cz'
-    selection = '3'
-    unit = 'EUI'
-    stats = 'avg'
-    fuel = ''
-    if by == 'cz':
-        order = list_types
-    else:
-        order = None
-    if stats == 'fit':
+def update_boxplot(types_tf, cz_tf, iou_tf, year_tf, area_tf,
+                   fuel_tf, value_tf, unit_tu, fuel_tu, stat_tu):
+    bills_pf = lib.filter_bldg(bills,
+                               types_tf=list_types, cz_tf=cz_tf,
+                               iou_tf=iou_tf,
+                               year_tf=year_tf, year_lim=(min_year, max_year),
+                               area_tf=area_tf, area_lim=(min_area, max_area))
+    if stat_tu == 'fit':
         value_suffix = '_slope'
     else:
         value_suffix = ''
-    by = 'cz'
-    selection = '3'
-    stats = 'avg'
-    fuel = 'tot'
-
-    value = 'EUI_' + fuel + '_' + stats + '_2009_2015' + value_suffix
-    return lib.plot_box(bills,
-                        by=by, selection=selection, value=value,
-                        order=order)
+    value = unit_tu + '_' + fuel_tu + '_' + stat_tu + '_2009_2015' + value_suffix
+    return lib.plot_box(bills_pf,
+                        by='cz', selection=cz_tf, value=value,
+                        order=list_types)
 
 
 if __name__ == '__main__':
