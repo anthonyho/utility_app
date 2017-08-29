@@ -365,7 +365,7 @@ def update_boxplot(types_tf, cz_tf, iou_tf, year_tf, area_tf,
 
 if __name__ == '__main__':
     if public_mode:
-        app.run_server(host='0.0.0.0')
+        app.run_server(host='0.0.0.0', port=80)
     else:
         app.run_server()
     
