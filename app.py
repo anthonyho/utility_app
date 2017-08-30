@@ -2,8 +2,30 @@
 '''
 Interactive interface for exploring building-level energy consumption data
 
+Usage:
+
+* To run in private mode, type the following in the terminal:
+    > python app.py path_to_data.csv
+  where path_to_data.csv is the path to the csv file containing the data. The 
+  app will be accessible to only your computer at "localhost" on any web 
+  browser.
+    
+* To run in public mode, type the following in the terminal:
+    > python app.py --public path_to_data.csv
+  where path_to_data.csv is the path to the csv file containing the data. The
+  app will be accessible to other computer at your hostname (e.g. 
+  CECxxxxx.energy.state.ca.us) on any web browser.
+
+Required libraries:
+* numpy
+* pandas
+* dash
+* dash-core-components
+* dash-html-components
+* dash-auth
+
 Anthony Ho <anthony.ho@energy.ca.gov>
-Last updated 8/22/2017
+Last updated 8/30/2017
 '''
 
 
@@ -19,12 +41,12 @@ from collections import OrderedDict
 import lib
 
 
-# Define css links
+# Define links to logo and css templates for the web app
 banner_link = 'https://raw.githubusercontent.com/anthonyho/utility_app/master/banner.png'
 css_links = ['https://fonts.googleapis.com/css?family=Overpass:300,300i',
              'https://cdn.rawgit.com/plotly/dash-app-stylesheets/dab6f937fd5548cebf4c6dc7e93a10ac438f5efb/dash-technical-charting.css']
 
-# Define names and options
+# Define names and options for filtering/coloring/metrics
 list_types = ['Warehouse', 'Distribution',
               'Office building', 'Medical building',
               'Hospital / convalescent home', 'Hotel / motel',
@@ -49,7 +71,7 @@ list_colorby = ['Building type', 'Climate zone',
                 'IOU', 'Fuel type',
                 'Consumption', 'Year built', 'Building area']
 
-# Get options and arguments from command line
+# Get path to data file and public/private option from command line
 description = 'Interactive web app for visualizing building energy data'
 parser = argparse.ArgumentParser(description=description)
 parser.add_argument('--public', action='store_true',
@@ -59,14 +81,14 @@ args = parser.parse_args()
 bills_file = args.file
 public_mode = args.public
 
-# Read file
+# Read data file
 bills = lib.read_processed_bills(bills_file)
 
-# Extract username and password
+# Extract username and password from auth.csv
 auth_list = pd.read_csv('auth.csv').values.tolist()
 
-# Compute names and options that are not defined in the section above
-# dynamically
+# Compute additional names and options for filtering/coloring/metricthat from
+# data file dynamically
 list_cz = [str(cz)
            for cz in np.sort(bills[('cis', 'cz')].unique().astype(int))]
 min_year = int(bills['cis']['year_built'].min())
@@ -250,7 +272,7 @@ app.layout = html.Div([header,
                              'padding': '40',
                              'padding-top': '20',
                              'padding-bottom': '20'})
-
+# Add CSS templates
 for css in css_links:
     app.css.append_css({"external_url": css})
 
