@@ -17,12 +17,12 @@ Usage:
   CECxxxxx.energy.state.ca.us) on any web browser.
 
 Required libraries:
-* numpy
-* pandas
-* dash
-* dash-core-components
-* dash-html-components
-* dash-auth
+* numpy (default in Anaconda)
+* pandas (default in Anaconda)
+* dash (have to install separately, see https://plot.ly/dash/installation)
+* dash-core-components (have to install separately, see https://plot.ly/dash/installation)
+* dash-html-components (have to install separately, see https://plot.ly/dash/installation)
+* dash-auth (have to install separately, see https://plot.ly/dash/installation)
 
 Anthony Ho <anthony.ho@energy.ca.gov>
 Last updated 8/30/2017
