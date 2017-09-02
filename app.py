@@ -17,8 +17,8 @@ Usage:
   CECxxxxx.energy.state.ca.us) on any web browser.
 
 Required libraries:
-* numpy (default in Anaconda)
-* pandas (default in Anaconda)
+* numpy (included in Anaconda)
+* pandas (included in Anaconda)
 * dash (have to install separately, see https://plot.ly/dash/installation)
 * dash-core-components (have to install separately, see https://plot.ly/dash/installation)
 * dash-html-components (have to install separately, see https://plot.ly/dash/installation)
